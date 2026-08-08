@@ -521,6 +521,28 @@ const priceText = p => /^\d+(\.\d+)?$/.test(String(p).trim())
 
 const initialOf = name => esc(String(name).replace(/^the\s+/i,'').charAt(0).toUpperCase());
 
+/* Turns a Google Drive share link into one that actually displays.
+   Paste the normal "Anyone with the link" URL into the Image column and
+   this handles the rest. Any other image link is left exactly as it is. */
+function fixImage(url){
+  const u = String(url || '').trim();
+  if(!u) return '';
+  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^&]*&)*id=|thumbnail\?(?:[^&]*&)*id=)([A-Za-z0-9_-]{10,})/);
+  if(m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=w800';
+  return u;
+}
+
+/* If Drive's first image address fails, quietly try its other one. */
+function imgFallback(el){
+  if(!el.dataset.retry && el.src.indexOf('lh3.googleusercontent') > -1){
+    el.dataset.retry = 1;
+    const id = el.src.split('/d/')[1].split('=')[0];
+    el.src = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
+  } else {
+    el.remove();
+  }
+}
+
 function normalizeRow(row){
   const r = {};
   Object.keys(row).forEach(k => r[k.trim().toLowerCase()] = String(row[k] ?? '').trim());
@@ -530,7 +552,7 @@ function normalizeRow(row){
     price: r['transfer price'] || r['card price'] || r.price || '',
     description: r.description || '',
     details: r.details || '',
-    image: r.image || '',
+    image: fixImage(r.image),
     badge: r.badge || '',
     show: r.show || '',
   };
@@ -611,7 +633,7 @@ function renderGrid(){
 
     const photo = p.image
       ? `<img class="card-photo" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy"
-             onerror="this.remove()">`
+             onerror="imgFallback(this)">`
       : '';
 
     card.innerHTML = `
@@ -648,7 +670,7 @@ function openModal(p){
   mArt.style.background = `linear-gradient(165deg,${c.tint},${c.soft})`;
   mArt.innerHTML = `
     <div class="arch"><span class="initial" style="color:${c.deep}">${initialOf(p.name)}</span></div>
-    ${p.image ? `<img class="card-photo" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.remove()">` : ''}`;
+    ${p.image ? `<img class="card-photo" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="imgFallback(this)">` : ''}`;
 
   const mCat = document.getElementById('mCat');
   mCat.textContent = p.category;
