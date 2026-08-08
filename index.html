@@ -205,31 +205,31 @@
   .modal-backdrop.open{display:flex}
   .modal{
     background:var(--white);border-radius:18px;
-    max-width:560px;width:100%;max-height:90vh;overflow:auto;
-    display:grid;grid-template-columns:1fr 1fr;
+    max-width:840px;width:100%;max-height:92vh;overflow:auto;
+    display:grid;grid-template-columns:1.35fr 1fr;
     animation:rise .35s ease both;
     position:relative;
   }
   .modal-art{
-    position:relative;min-height:230px;
+    position:relative;min-height:0;aspect-ratio:4/5;
     display:flex;align-items:flex-end;justify-content:center;
-    overflow:hidden;
+    overflow:hidden;cursor:zoom-in;
   }
   .modal-art .arch{width:60%;height:72%;border-radius:999px 999px 0 0;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center}
-  .modal-art .initial{font-weight:200;font-size:50px;line-height:1}
-  .modal-body{padding:20px 20px;display:flex;flex-direction:column;gap:7px;text-align:center}
+  .modal-art .initial{font-weight:200;font-size:76px;line-height:1}
+  .modal-body{padding:30px 26px;display:flex;flex-direction:column;gap:9px;text-align:center;justify-content:center}
   .modal-body .card-cat{font-size:9px}
-  .modal-name{font-size:14px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.35}
-  .modal-desc{font-size:11px;color:var(--ink-muted);font-weight:300}
+  .modal-name{font-size:16px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.35}
+  .modal-desc{font-size:12px;color:var(--ink-muted);font-weight:300}
   .modal-detail{
-    font-size:10.5px;color:var(--ink-muted);font-weight:300;
+    font-size:11px;color:var(--ink-muted);font-weight:300;
     border-top:1px solid var(--line);border-bottom:1px solid var(--line);
     padding:12px 0;margin:6px 0;
   }
   .modal-detail:empty{display:none}
-  .modal-price{font-size:15px;font-weight:500;letter-spacing:.06em}
+  .modal-price{font-size:19px;font-weight:500;letter-spacing:.06em}
   .modal-cta{
-    margin-top:auto;
+    margin-top:14px;
     background:var(--ink);color:var(--cream);
     padding:10px 20px;border-radius:999px;
     font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
@@ -237,6 +237,13 @@
     transition:transform .2s ease;
   }
   .modal-cta:hover{transform:translateY(-2px)}
+  .zoom-wrap{
+    position:fixed;inset:0;z-index:120;display:none;
+    background:rgba(59,47,35,.92);
+    align-items:center;justify-content:center;padding:16px;cursor:zoom-out;
+  }
+  .zoom-wrap.open{display:flex}
+  .zoom-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
   .modal-close{
     position:absolute;top:14px;right:14px;z-index:2;
     width:28px;height:28px;border-radius:50%;
@@ -251,7 +258,7 @@
     .card-name{font-size:10.5px;letter-spacing:.03em}
     .card-art .initial{font-size:26px}
     .modal{grid-template-columns:1fr}
-    .modal-art{min-height:190px}
+    .modal-art{aspect-ratio:1/1}
     .section{padding:22px 12px}
     .hero{padding:24px 16px 26px}
     .pill{font-size:10px;padding:5px 11px}
@@ -422,6 +429,8 @@
     </div>
   </div>
 </div>
+
+<div class="zoom-wrap" id="zoomWrap"><img id="zoomImg" alt=""></div>
 
 <!-- ============ QUICK VIEW MODAL ============ -->
 <div class="modal-backdrop" id="backdrop" role="dialog" aria-modal="true" aria-label="Product quick view">
@@ -687,9 +696,18 @@ function closeModal(){
   backdrop.classList.remove('open');
   document.body.style.overflow = '';
 }
+const zoomWrap = document.getElementById('zoomWrap');
+document.getElementById('mArt').addEventListener('click', () => {
+  const photo = document.querySelector('#mArt .card-photo');
+  if(!photo) return;
+  document.getElementById('zoomImg').src = photo.src;
+  zoomWrap.classList.add('open');
+});
+zoomWrap.addEventListener('click', () => zoomWrap.classList.remove('open'));
+
 document.getElementById('closeModal').addEventListener('click', closeModal);
 backdrop.addEventListener('click', e => { if(e.target === backdrop) closeModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(); closeCart(); } });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ zoomWrap.classList.remove('open'); closeModal(); closeCart(); } });
 
 
 /* ---------- cart ---------- */
