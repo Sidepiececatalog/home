@@ -150,6 +150,9 @@ window.__feedText = fetch('https://script.google.com/macros/s/AKfycbwL0Fx-Fpb1Sq
   .spin-ring{position:absolute;inset:0;width:100%;height:100%;animation:spinSP 1.3s linear infinite}
   @keyframes pulseSP{from{transform:scale(1);opacity:.7}to{transform:scale(1.06);opacity:1}}
   @keyframes spinSP{to{transform:rotate(360deg)}}
+  .feed-down{grid-column:1/-1;min-height:44vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px}
+  .fd-title{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-muted)}
   @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   .card-art{
     aspect-ratio:4/5;
@@ -511,11 +514,11 @@ window.__feedText = fetch('https://script.google.com/macros/s/AKfycbwL0Fx-Fpb1Sq
       named "Catalog Products.xlsx" (or products.xlsx).
       Host both files together and the catalog reads the Excel on
       every visit. Update the Excel, re-upload, done.
-   3. Neither found? It shows the products baked into FALLBACK below.
+   3. Neither found? A retry message shows instead.
 
    Note: reading the Excel only works once the files are hosted
    (e.g. Netlify). Opened straight from your computer, browsers
-   block it and you'll see the FALLBACK products instead.
+   block it and the retry message shows instead.
 ================================================================= */
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwL0Fx-Fpb1Sq1ye5opnojLpb5ceX6ZQOLnnNf2IaQX3zUr7OCXwe4ZIEUpK3w6gGaclA/exec';
 
@@ -533,38 +536,6 @@ const PALETTE = [
   { tint:'#F3E8D3', soft:'#FAF4E7', deep:'#A78A57' },  /* sand   */
   { tint:'#E9DACB', soft:'#F5ECE1', deep:'#7C5F49' },  /* mocha  */
   { tint:'#E4D2C0', soft:'#F2E7DA', deep:'#4A3A2C' },  /* espresso */
-];
-
-/* Snapshot demo products — shown only if the live sheet cannot load */
-const FALLBACK = [
-  { name:'The Mini Tote', category:'Bags', price:'45', badge:'Bestseller',
-    description:'Small but mighty. Fits phone, wallet and keys, and not much else, on purpose.',
-    details:'20 x 15 cm \u00b7 cotton canvas \u00b7 magnetic close \u00b7 Blush, Tan, Black' },
-  { name:'The Everyday Tote', category:'Bags', price:'68',
-    description:'The carry-everything workhorse. Laptop, gym kit, life.',
-    details:'Fits a 15" laptop \u00b7 heavy canvas \u00b7 interior zip pocket \u00b7 Natural, Navy',
-    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Canvas_two-tone_tote_Navy_and_Natural7_%289038437258%29.jpg/960px-Canvas_two-tone_tote_Navy_and_Natural7_%289038437258%29.jpg' },
-  { name:'The Crossbody', category:'Bags', price:'55', badge:'New',
-    description:'Hands-free and out the door. Secure zip, adjustable strap.',
-    details:'Adjustable 120 cm strap \u00b7 pebbled vegan leather \u00b7 Black, Olive, Cream' },
-  { name:'The Everyday Sandal', category:'Shoes', price:'85',
-    description:'The pair that ends up by the front door all season.',
-    details:'Leather straps \u00b7 cushioned sole \u00b7 EU 36 to 42 \u00b7 Tan, Black' },
-  { name:'The Oversized Frame', category:'Sunglasses', price:'39', badge:'New',
-    description:'Instant main character energy.',
-    details:'UV400 lenses \u00b7 acetate frame \u00b7 soft case included \u00b7 Tort, Black' },
-  { name:'The Chain Necklace', category:'Jewellery', price:'from $38',
-    description:'Wears alone, layers beautifully.',
-    details:'18k gold plated \u00b7 two lengths \u00b7 tarnish resistant' },
-  { name:'The Card Holder', category:'Wallets/Card Holders', price:'35', badge:'New',
-    description:'Slim, structured, and monogram ready.',
-    details:'Pebbled leather \u00b7 four slots \u00b7 free initials \u00b7 Black, Tan, Blush' },
-  { name:'The Classic Belt', category:'Belts', price:'42',
-    description:'The quiet finisher for every outfit.',
-    details:'Full grain leather \u00b7 brushed gold buckle \u00b7 sizes S to XL' },
-  { name:'The Wide Brim', category:'Hats', price:'48',
-    description:'Shade, but make it fashion.',
-    details:'Woven straw \u00b7 adjustable inner band \u00b7 packs flat for travel' },
 ];
 
 /* ================= engine — no need to edit below ================= */
@@ -1051,9 +1022,16 @@ async function init(){
   let loaded = false;
   if(url) loaded = await loadRemote(url);
   if(!loaded) loaded = await loadXlsx();
-  if(!loaded && !painted) PRODUCTS = FALLBACK;
 
   stopLoader();
+  if(!loaded && !painted){
+    document.getElementById('grid').innerHTML =
+      '<div class="feed-down">'
+      + '<div class="fd-title">The collection is taking a moment</div>'
+      + '<button class="modal-cta" onclick="location.reload()">Tap to retry</button>'
+      + '</div>';
+    return;
+  }
   if(loaded || !painted){
     paint();
     restoreCart();
