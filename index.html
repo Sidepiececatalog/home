@@ -958,7 +958,11 @@ async function loadRemote(url){
       raw = Papa.parse(text, { header:true, skipEmptyLines:true }).data;   /* published CSV */
     }
     const rows = raw.map(normalizeRow).filter(p => p.name && !/^(no|hide|hidden)$/i.test(p.show));
-    if(rows.length){ PRODUCTS = rows; return true; }
+    if(rows.length){
+      PRODUCTS = rows;
+      try{ localStorage.setItem('sidepiece-feed', JSON.stringify(rows)); }catch(e){}
+      return true;
+    }
   }catch(err){}
   return false;
 }
@@ -990,20 +994,36 @@ async function init(){
   const fromUrl = new URLSearchParams(location.search).get('sheet');
   const url = fromUrl || SHEET_URL;
 
-  /* show a soft skeleton straight away so nothing sits blank */
-  const grid = document.getElementById('grid');
-  grid.innerHTML = Array.from({length:10},
-    () => '<div class="card skeleton"><div class="sk-art"></div>'
-        + '<div class="card-body"><div class="sk-line"></div>'
-        + '<div class="sk-line short"></div></div></div>').join('');
+  /* repeat visitor: paint instantly from the last visit's copy */
+  let painted = false;
+  try{
+    const saved = JSON.parse(localStorage.getItem('sidepiece-feed') || 'null');
+    if(Array.isArray(saved) && saved.length){
+      PRODUCTS = saved;
+      paint();
+      restoreCart();
+      painted = true;
+    }
+  }catch(e){}
+
+  /* first visitor: soft skeletons while the feed answers */
+  if(!painted){
+    const grid = document.getElementById('grid');
+    grid.innerHTML = Array.from({length:10},
+      () => '<div class="card skeleton"><div class="sk-art"></div>'
+          + '<div class="card-body"><div class="sk-line"></div>'
+          + '<div class="sk-line short"></div></div></div>').join('');
+  }
 
   let loaded = false;
   if(url) loaded = await loadRemote(url);
   if(!loaded) loaded = await loadXlsx();
-  if(!loaded) PRODUCTS = FALLBACK;
+  if(!loaded && !painted) PRODUCTS = FALLBACK;
 
-  paint();
-  restoreCart();
+  if(loaded || !painted){
+    paint();
+    restoreCart();
+  }
 }
 init();
 </script>
