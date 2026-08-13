@@ -6,9 +6,15 @@
 <title>Side Piece</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
+<script>
+/* start fetching the products immediately, before the rest of the page parses */
+window.__feedText = fetch('https://script.google.com/macros/s/AKfycbwL0Fx-Fpb1Sq1ye5opnojLpb5ceX6ZQOLnnNf2IaQX3zUr7OCXwe4ZIEUpK3w6gGaclA/exec')
+  .then(r => r.ok ? r.text() : null).catch(() => null);
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root{
     --cream:#FBF8F3;
@@ -947,14 +953,22 @@ renderCart();
 /* ---------- load products: sheet link, then local Excel, then fallback ---------- */
 async function loadRemote(url){
   try{
-    const res = await fetch(url);
-    if(!res.ok) return false;
-    const text = (await res.text()).trim();
+    let text = null;
+    if(url === SHEET_URL && window.__feedText){
+      text = await window.__feedText;
+    }
+    if(text == null){
+      const res = await fetch(url);
+      if(!res.ok) return false;
+      text = await res.text();
+    }
+    text = text.trim();
     let raw;
     if(text.startsWith('[') || text.startsWith('{')){
       raw = JSON.parse(text);                       /* Apps Script JSON feed */
       if(!Array.isArray(raw)) raw = raw.products || [];
     }else{
+      if(typeof Papa === 'undefined') return false;
       raw = Papa.parse(text, { header:true, skipEmptyLines:true }).data;   /* published CSV */
     }
     const rows = raw.map(normalizeRow).filter(p => p.name && !/^(no|hide|hidden)$/i.test(p.show));
@@ -968,6 +982,7 @@ async function loadRemote(url){
 }
 
 async function loadXlsx(){
+  if(typeof XLSX === 'undefined') return false;
   const candidates = ['Catalog Products.xlsx', 'products.xlsx', 'catalog-products.xlsx'];
   for(const name of candidates){
     try{
