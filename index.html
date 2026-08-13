@@ -143,12 +143,13 @@ window.__feedText = fetch('https://script.google.com/macros/s/AKfycbwL0Fx-Fpb1Sq
     background-size:220% 100%;animation:shimmer 1.4s linear infinite}
   .sk-line.short{width:42%}
   @keyframes shimmer{from{background-position:180% 0}to{background-position:-40% 0}}
-  .loader{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:13px;padding:30px 0 6px}
-  .loader img{height:62px;width:auto;opacity:.9;animation:pulseSP 1.6s ease-in-out infinite alternate}
-  @keyframes pulseSP{from{transform:scale(1);opacity:.7}to{transform:scale(1.08);opacity:1}}
-  .loader-line{font-size:10px;font-style:italic;font-weight:300;letter-spacing:.22em;
-    text-transform:uppercase;color:var(--ink-muted);min-height:15px;
-    opacity:1;transition:opacity .35s ease}
+  .loader{grid-column:1/-1;display:flex;align-items:center;justify-content:center;
+    min-height:52vh;padding:0}
+  .spin-wrap{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center}
+  .spin-wrap img{height:44px;width:auto;opacity:.9;animation:pulseSP 1.6s ease-in-out infinite alternate}
+  .spin-ring{position:absolute;inset:0;width:100%;height:100%;animation:spinSP 1.3s linear infinite}
+  @keyframes pulseSP{from{transform:scale(1);opacity:.7}to{transform:scale(1.06);opacity:1}}
+  @keyframes spinSP{to{transform:rotate(360deg)}}
   @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   .card-art{
     aspect-ratio:4/5;
@@ -1005,52 +1006,22 @@ async function loadXlsx(){
   return false;
 }
 
-/* cute first visit loader: the monogram breathes while secrets rotate */
-const LOADER_LINES = [
-  'Sworn to secrecy\u2026',
-  'Polishing the hardware\u2026',
-  'Wrapping it in ribbon\u2026',
-  'Steaming the dust bags\u2026',
-  'Buffing every buckle\u2026',
-  'Checking every stitch\u2026',
-  'Your secret is safe with us\u2026',
-  'Zipping the last zip\u2026',
-];
-let loaderTimer = null;
-
+/* first visit loader: the monogram breathing inside a slow spinning ring */
 function startLoader(){
   const grid = document.getElementById('grid');
   const mono = document.querySelector('.foot-logo');
-  const sk = '<div class="card skeleton"><div class="sk-art"></div>'
-           + '<div class="card-body"><div class="sk-line"></div>'
-           + '<div class="sk-line short"></div></div></div>';
   grid.innerHTML =
-    '<div class="loader">'
+    '<div class="loader"><div class="spin-wrap">'
+    + '<svg class="spin-ring" viewBox="0 0 100 100">'
+    + '<circle cx="50" cy="50" r="46" fill="none" stroke="#EAD9C9" stroke-width="2"/>'
+    + '<circle cx="50" cy="50" r="46" fill="none" stroke="#8A6E52" stroke-width="2" '
+    + 'stroke-linecap="round" stroke-dasharray="70 219"/>'
+    + '</svg>'
     + (mono ? '<img src="' + mono.src + '" alt="">' : '')
-    + '<div class="loader-line" id="loaderLine"></div></div>'
-    + Array.from({length: 6}, () => sk).join('');
-
-  let i = Math.floor(Math.random() * LOADER_LINES.length);
-  const line = document.getElementById('loaderLine');
-  line.textContent = LOADER_LINES[i % LOADER_LINES.length];
-  i++;
-  loaderTimer = setInterval(() => {
-    const el = document.getElementById('loaderLine');
-    if(!el){ stopLoader(); return; }
-    el.style.opacity = 0;
-    setTimeout(() => {
-      const el2 = document.getElementById('loaderLine');
-      if(!el2) return;
-      el2.textContent = LOADER_LINES[i % LOADER_LINES.length];
-      el2.style.opacity = 1;
-      i++;
-    }, 300);
-  }, 1600);
+    + '</div></div>';
 }
 
-function stopLoader(){
-  if(loaderTimer){ clearInterval(loaderTimer); loaderTimer = null; }
-}
+function stopLoader(){}
 
 function paint(){
   buildCategories();
